@@ -1,0 +1,84 @@
+#include <WiFi.h>
+#include <esp_now.h>
+
+// ====== PINES DE BOTONES ======
+#define BTN_ROJO   45
+#define BTN_VERDE  41
+#define BTN_AZUL   15
+#define BTN_BLANCO 46
+
+// ====== MAC DEL RECEPTOR ======
+uint8_t macReceptor[] = {
+  0x80, 0xB5, 0x4E, 0xD7, 0xE4, 0x38
+};
+
+// ====== ESTRUCTURA ======
+typedef struct struct_message {
+  int valor;   // 1=Rojo, 2=Verde, 3=Azul, 4=Blanco
+} struct_message;
+
+struct_message datos;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  // ====== BOTONES ======
+  pinMode(BTN_ROJO,   INPUT_PULLUP);
+  pinMode(BTN_VERDE,  INPUT_PULLUP);
+  pinMode(BTN_AZUL,   INPUT_PULLUP);
+  pinMode(BTN_BLANCO, INPUT_PULLUP);
+
+  // ====== WIFI ======
+  WiFi.mode(WIFI_STA);
+
+  // ====== ESP-NOW ======
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error al iniciar ESP-NOW");
+    return;
+  }
+
+  // ====== REGISTRAR RECEPTOR ======
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, macReceptor, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Error al agregar peer");
+    return;
+  }
+
+  Serial.println("Transmisor listo");
+}
+
+void loop() {
+
+  if (digitalRead(BTN_ROJO) == LOW) {
+    datos.valor = 1;
+    esp_now_send(macReceptor, (uint8_t*)&datos, sizeof(datos));
+    Serial.println("Rojo enviado");
+    delay(300);
+  }
+
+  if (digitalRead(BTN_VERDE) == LOW) {
+    datos.valor = 2;
+    esp_now_send(macReceptor, (uint8_t*)&datos, sizeof(datos));
+    Serial.println("Verde enviado");
+    delay(300);
+  }
+
+  if (digitalRead(BTN_AZUL) == LOW) {
+    datos.valor = 3;
+    esp_now_send(macReceptor, (uint8_t*)&datos, sizeof(datos));
+    Serial.println("Azul enviado");
+    delay(300);
+  }
+
+  if (digitalRead(BTN_BLANCO) == LOW) {
+    datos.valor = 4;
+    esp_now_send(macReceptor, (uint8_t*)&datos, sizeof(datos));
+    Serial.println("Blanco enviado");
+    delay(300);
+  }
+}
